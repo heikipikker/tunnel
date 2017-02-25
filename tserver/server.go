@@ -142,14 +142,14 @@ func (s *server) runOnce() {
 		}
 		conn, err = s.createUDPConn()
 		fatalErr(err)
-		mutex.Lock()
 		_, err = conn.Write(buf[:n])
 		if err != nil {
 			conn.Close()
+			continue
 		}
+		mutex.Lock()
+		sessions[addrstr] = conn
 		mutex.Unlock()
-		if err == nil {
-			go readfunc(conn, addrstr)
-		}
+		go readfunc(conn, addrstr)
 	}
 }
