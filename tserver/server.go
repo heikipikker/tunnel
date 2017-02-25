@@ -1,0 +1,155 @@
+package main
+
+import (
+	"log"
+	"net"
+	"sync"
+	"time"
+
+	"github.com/ccsexyz/rawcon"
+)
+
+type server struct {
+	c   config
+	die chan bool
+	r   rawcon.Raw
+}
+
+func newServer(c config) *server {
+	return &server{
+		c:   c,
+		die: make(chan bool),
+		r: rawcon.Raw{
+			NoHTTP: c.NoHTTP,
+			IgnRST: c.IgnRST,
+			DSCP:   0,
+		},
+	}
+}
+
+func (s *server) createRawListener() (listener net.PacketConn) {
+	listener, err := s.r.ListenRAW(s.c.LocalAddr)
+	fatalErr(err)
+	return
+}
+
+func (s *server) createUDPConn() (conn net.Conn, err error) {
+	raddr, err := net.ResolveUDPAddr("udp", s.c.TargetAddr)
+	fatalErr(err)
+	conn, err = net.DialUDP("udp", nil, raddr)
+	return
+}
+
+func (s *server) close() {
+	close(s.die)
+}
+
+func (s *server) run() {
+	defer s.close()
+	for {
+		s.runOnce()
+	}
+}
+
+func (s *server) runOnce() {
+	die := make(chan bool)
+	buf := make([]byte, 65536)
+	var mutex sync.Mutex
+	sessions := make(map[string]net.Conn)
+	expires := make(map[string]*time.Time)
+	listener := s.createRawListener()
+	defer close(die)
+	go func() {
+		defer log.Println("listener was closed")
+		defer listener.Close()
+		defer func() {
+			mutex.Lock()
+			defer mutex.Unlock()
+			for _, v := range sessions {
+				v.Close()
+			}
+		}()
+		ticker := time.NewTicker(time.Minute * 3)
+		for {
+			select {
+			case <-die:
+				return
+			case <-s.die:
+				return
+			case <-ticker.C:
+				now := time.Now()
+				mutex.Lock()
+				for k, v := range expires {
+					if !v.Add(time.Minute * 3).After(now) {
+						delete(expires, k)
+						conn, ok := sessions[k]
+						if ok {
+							delete(sessions, k)
+							conn.Close()
+						}
+					}
+				}
+				mutex.Unlock()
+			}
+		}
+	}()
+	readfunc := func(conn net.Conn, addrstr string) {
+		defer conn.Close()
+		defer func() {
+			select {
+			case <-die:
+			case <-s.die:
+			default:
+				mutex.Lock()
+				delete(sessions, addrstr)
+				delete(expires, addrstr)
+				mutex.Unlock()
+			}
+		}()
+		addr, err := net.ResolveUDPAddr("udp", addrstr)
+		if err != nil {
+			return
+		}
+		buf := make([]byte, 65536)
+		for {
+			n, err := conn.Read(buf)
+			if err != nil {
+				return
+			}
+			_, err = listener.WriteTo(buf[:n], addr)
+			if err != nil {
+				return
+			}
+		}
+	}
+	for {
+		n, addr, err := listener.ReadFrom(buf)
+		if err != nil {
+			return
+		}
+		now := time.Now()
+		addrstr := addr.String()
+		mutex.Lock()
+		conn, ok := sessions[addrstr]
+		expires[addrstr] = &now
+		mutex.Unlock()
+		if ok {
+			_, err = conn.Write(buf[:n])
+			if err != nil {
+				conn.Close()
+			}
+			continue
+		}
+		conn, err = s.createUDPConn()
+		fatalErr(err)
+		mutex.Lock()
+		_, err = conn.Write(buf[:n])
+		if err != nil {
+			conn.Close()
+		}
+		mutex.Unlock()
+		if err == nil {
+			go readfunc(conn, addrstr)
+		}
+	}
+}
