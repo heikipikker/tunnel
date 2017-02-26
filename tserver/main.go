@@ -19,6 +19,9 @@ func main() {
 		wg.Add(1)
 		go func(v config) {
 			defer wg.Done()
+			if v.Expires <= 0 {
+				v.Expires = defaultExpires
+			}
 			s := newServer(v)
 			go s.run()
 			<-s.die

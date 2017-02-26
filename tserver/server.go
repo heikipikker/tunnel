@@ -56,7 +56,7 @@ func (s *server) runOnce() {
 	buf := make([]byte, 65536)
 	var mutex sync.Mutex
 	sessions := make(map[string]net.Conn)
-	expires := make(map[string]*time.Time)
+	expires := make(map[string]bool)
 	listener := s.createRawListener()
 	defer close(die)
 	go func() {
@@ -69,7 +69,7 @@ func (s *server) runOnce() {
 				v.Close()
 			}
 		}()
-		ticker := time.NewTicker(time.Minute * 3)
+		ticker := time.NewTicker(time.Second * time.Duration(s.c.Expires))
 		for {
 			select {
 			case <-die:
@@ -77,10 +77,11 @@ func (s *server) runOnce() {
 			case <-s.die:
 				return
 			case <-ticker.C:
-				now := time.Now()
 				mutex.Lock()
 				for k, v := range expires {
-					if !v.Add(time.Minute * 3).After(now) {
+					if v {
+						expires[k] = !v
+					} else {
 						delete(expires, k)
 						conn, ok := sessions[k]
 						if ok {
@@ -127,11 +128,10 @@ func (s *server) runOnce() {
 		if err != nil {
 			return
 		}
-		now := time.Now()
 		addrstr := addr.String()
 		mutex.Lock()
 		conn, ok := sessions[addrstr]
-		expires[addrstr] = &now
+		expires[addrstr] = true
 		mutex.Unlock()
 		if ok {
 			_, err = conn.Write(buf[:n])
