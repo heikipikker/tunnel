@@ -5,6 +5,7 @@ import (
 	"net"
 	"sync"
 	"time"
+
 	ss "github.com/ccsexyz/shadowsocks-go/shadowsocks"
 )
 
@@ -72,7 +73,7 @@ func RunUDPServer(conn net.PacketConn, check func([]byte) bool, handle func(*udp
 	sessions := make(map[string]*udpSession)
 	var lock sync.Mutex
 
-	go sessionsCleaner(sessions, &lock, die, time.Minute)
+	go sessionsCleaner(sessions, &lock, die, time.Second*time.Duration(c.Expires))
 
 	for {
 		rbuf := buf
@@ -84,7 +85,7 @@ func RunUDPServer(conn net.PacketConn, check func([]byte) bool, handle func(*udp
 			if n < c.Ivlen {
 				continue
 			}
-			n = decrypt(c, rbuf, dbuf)
+			n = decrypt(c, rbuf[:n], dbuf)
 			rbuf = dbuf
 		}
 		if check != nil && !check(rbuf[:n]) {
@@ -125,9 +126,9 @@ func RunUDPServer(conn net.PacketConn, check func([]byte) bool, handle func(*udp
 						}
 						if len(c.Method) != 0 {
 							if c.Type == "server" {
-								n = encrypt(c, wbuf, ebuf)
+								n = encrypt(c, wbuf[:n], ebuf)
 							} else {
-								n = decrypt(c, wbuf, ebuf)
+								n = decrypt(c, wbuf[:n], ebuf)
 							}
 							wbuf = ebuf
 						}
@@ -153,7 +154,7 @@ func encrypt(c *config, buf, ebuf []byte) (n int) {
 		log.Fatal(err)
 	}
 	n = copy(ebuf, enc.GetIV())
-	enc.Encrypt(ebuf[:n], buf)
+	enc.Encrypt(ebuf[n:], buf)
 	n += len(buf)
 	return
 }
@@ -168,6 +169,6 @@ func decrypt(c *config, buf, dbuf []byte) (n int) {
 		return -1
 	}
 	dec.Decrypt(dbuf, buf[ivlen:])
-	n -= ivlen
+	n = len(buf) - ivlen
 	return
 }

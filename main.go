@@ -1,9 +1,9 @@
 package main
 
 import (
-	"os"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 )
 
@@ -19,7 +19,7 @@ func main() {
 	var wg sync.WaitGroup
 	for _, c := range configs {
 		wg.Add(1)
-		go func() {
+		go func(c *config) {
 			defer wg.Done()
 			switch c.Type {
 			case "server":
@@ -27,7 +27,7 @@ func main() {
 			default:
 				RunLocalServer(c)
 			}
-		}()
+		}(c)
 	}
 	wg.Wait()
 }

@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/ccsexyz/rawcon"
 	"log"
 	"net"
+
+	"github.com/ccsexyz/rawcon"
 )
 
 func RunLocalServer(c *config) {
 	raw := rawcon.Raw{
 		NoHTTP: c.NoHTTP,
-		Host:  c.Host,
-		DSCP: 0,
+		Host:   c.Host,
+		DSCP:   0,
 		IgnRST: c.IgnRST,
 	}
 	conn, err := newUDPListener(c.Localaddr)

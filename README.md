@@ -2,67 +2,39 @@
 
 一个简单的将 UDP 报文伪装为 TCP/HTTP 报文 UDP 隧道,在 Linux 下基于原始套接字实现, 在 Windows/Macos 下基于 pcap 实现.
 
-## 开发目的
+## Features
 
-解决在使用某些基于 UDP 协议的软件时, 可能会遇到的被运营商 QOS 甚至断流的问题. 
+* 将 UDP 流量通过隧道的形式伪装为 TCP 流量  
+* 支持 aes/chacha20 加密,启用加密时设置 method 字段和 password 字段,method 字段为空则不启用加密  
+* 支持将流量伪装为 HTTP 流量,默认启用,可用 host 字段设置伪装的 Host,也可以设置 nohttp 字段禁用这项功能  
 
-## 基本用法
-
-下面以 kcptun 为例演示如何使用 tunnel 的客户端与服务端:
-
-假定原来的 kcptun 服务端与客户端的参数分别为:
-``` 
-kcptun_server -l :8080 -t :9999 
-kcptun_client -r <server ip>:8080 -l :8080
+## Build 
 ```
-编辑用于服务端和客户端的配置文件
-
-tserver.json
-```json
-[{
-"localaddr": ":8888",
-"targetaddr": ":8080"
-}]
+go get -u -v github.com/ccsexyz/tunnel
 ```
 
-tclient.json
-```json
-[{
-"localaddr": ":10000",
-"remoteaddr": "<server ip>:8888"
-}]
+## Basic Usage 
+  
 ```
-
-然后分别在服务端与本机执行下面的命令即可建立一条 UDP 隧道
-``` 
-# 服务器
-tserver tserver.json
-# 客户端
-tclient tclient.json
+// test.json
+{
+    "type": "server",
+    "localaddr": "127.0.0.1:7676",
+    "remoteaddr": ":6666",
+    "method": "aes-128-cfb",
+    "password": "123"
+}
+tunnel test.json
 ```
+具体注意事项参考[kcpraw](https://github.com/ccsexyz/kcptun)
 
-然后更改 kcptun 客户端的启动参数,即可通过建立的隧道连接 kcptun 的服务端
-``` 
-kcptun_client -r ":10000" -l :8080
-```
-
-如果需要两个或者更多的隧道直接按如下方式配置,而不需要启动多个可执行程序,比如
-```json 
-[
-    {
-    "localaddr": ":<port1>",
-    "remoteaddr": "<ip1>:<remote_port1>"
-    }, 
-    {
-    "localaddr": ":<port2>",
-    "remoteaddr": "<ip2>:<remote_port2>"
-    }
-]
-```
-
-## 额外参数  
-
-nohttp: 在 TCP 三次握手后不进行 HTTP 握手,即不伪装为 HTTP 流量,服务端和客户端在这一项上必须保持一致   
-host: 设置 HTTP 伪装时所使用的 Host 字段,如设置了 nohttp 这个字段将会失效  
-ignrst: 忽略对端发送的 RST 报文,不推荐使用,仅当你无法过滤 RST 报文时考虑使用  
-expires: 服务端每个 session 的过期时间,默认为5分钟  
+## Parameters  
+* type: 服务器类型,local 为本地客户端,server 为远程服务器  
+* localaddr: 本地监听地址  
+* remoteaddr: 对本地客户端指远程服务器的地址,对远程服务器指隧道的目的地址  
+* nohttp: 设置为 true 时不进行 HTTP 握手  
+* host: 设置 HTTP 伪装的 Host  
+* method: 加密方法,可选 aes-128/192/256-cfb/ctr, chacha20, chacha20-ietf, rc4-md5  
+* password: 加密使用的密码  
+* ignrst: 忽略对端发送的 RST 报文,不推荐使用,仅当你无法过滤 RST 报文时考虑使用  
+* expires: 设置每个 session 的过期时间,单位为秒,默认为 30    
