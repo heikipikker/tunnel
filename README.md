@@ -15,7 +15,7 @@ go get -u -v github.com/ccsexyz/tunnel
 
 ## Basic Usage 
   
-```
+```  
 // 服务端, localaddr 一定要写成 ip:port 这种形式
 // server.json
 {
@@ -38,7 +38,7 @@ tunnel server.json
     "ignrst": true
 }
 tunnel client.json  
-```  
+```
 具体注意事项参考[kcpraw](https://github.com/ccsexyz/kcpraw)
 
 ## Parameters  
