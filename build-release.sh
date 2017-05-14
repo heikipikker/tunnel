@@ -7,7 +7,7 @@ fi
 
 UPX=false
 if hash upx 2>/dev/null; then
-	UPX=true
+	UPX=false
 fi
 
 VERSION=`date -u +%Y%m%d`
@@ -20,6 +20,9 @@ for os in ${OSES[@]}; do
 	for arch in ${ARCHS[@]}; do
 		suffix=""
         cgo_enabled=0
+        if [ $os == "darwin" ]; then
+            cgo_enabled=1
+        fi
         env CGO_ENABLED=$cgo_enabled GOOS=$os GOARCH=$arch go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o tunnel_${os}_${arch}${suffix} github.com/ccsexyz/tunnel
 		if $UPX; then upx -9 tunnel_${os}_${arch}${suffix} ;fi
 		tar -zcf tunnel-${os}-${arch}-$VERSION.tar.gz tunnel_${os}_${arch}${suffix}
