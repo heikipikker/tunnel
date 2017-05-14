@@ -16,17 +16,30 @@ go get -u -v github.com/ccsexyz/tunnel
 ## Basic Usage 
   
 ```
-// test.json
+// 服务端, localaddr 一定要写成 ip:port 这种形式
+// server.json
 {
     "type": "server",
-    "localaddr": "127.0.0.1:7676",
+    "localaddr": "vps-ip:7676",
     "remoteaddr": ":6666",
     "method": "aes-128-cfb",
-    "password": "123"
+    "password": "123",
+    "ignrst": true
 }
-tunnel test.json
-```
-具体注意事项参考[kcpraw](https://github.com/ccsexyz/kcptun)
+tunnel server.json
+// 客户端
+// client.json
+{
+    "type": "local",
+    "localaddr": "127.0.0.1:7676",
+    "remoteaddr": "vps-ip:7676",
+    "method": "aes-128-cfb",
+    "password": "123",
+    "ignrst": true
+}
+tunnel client.json  
+```  
+具体注意事项参考[kcpraw](https://github.com/ccsexyz/kcpraw)
 
 ## Parameters  
 * type: 服务器类型,local 为本地客户端,server 为远程服务器  
