@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	ss "github.com/ccsexyz/shadowsocks-go/shadowsocks"
+	"github.com/ccsexyz/utils"
 )
 
 type udpSession struct {
@@ -149,7 +149,7 @@ func newUDPListener(address string) (conn *net.UDPConn, err error) {
 }
 
 func encrypt(c *config, buf, ebuf []byte) (n int) {
-	enc, err := ss.NewEncrypter(c.Method, c.Password)
+	enc, err := utils.NewEncrypter(c.Method, c.Password)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func decrypt(c *config, buf, dbuf []byte) (n int) {
 	if len(buf) < ivlen {
 		return -1
 	}
-	dec, err := ss.NewDecrypter(c.Method, c.Password, buf[:ivlen])
+	dec, err := utils.NewDecrypter(c.Method, c.Password, buf[:ivlen])
 	if err != nil {
 		return -1
 	}

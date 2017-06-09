@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	ss "github.com/ccsexyz/shadowsocks-go/shadowsocks"
+	"github.com/ccsexyz/utils"
 )
 
 const (
@@ -46,7 +46,7 @@ func readConfig(path string) (configs []*config, err error) {
 }
 
 func checkConfig(c *config) {
-	c.Ivlen = ss.GetIvLen(c.Method)
+	c.Ivlen = utils.GetIvLen(c.Method)
 	if c.Expires == 0 {
 		c.Expires = defaultExpires
 	}
