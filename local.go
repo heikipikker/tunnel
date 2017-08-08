@@ -12,7 +12,7 @@ func RunLocalServer(c *config) {
 		NoHTTP: c.NoHTTP,
 		Host:   c.Host,
 		DSCP:   0,
-		IgnRST: c.IgnRST,
+		IgnRST: true,
 	}
 	conn, err := newUDPListener(c.Localaddr)
 	if err != nil {

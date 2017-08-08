@@ -4,8 +4,8 @@
 
 ## Features
 
-* 将 UDP 流量通过隧道的形式伪装为 TCP 流量  
-* 支持 aes/chacha20 加密,启用加密时设置 method 字段和 password 字段,method 字段为空则不启用加密  
+* 将 UDP 流量通过隧道的形式伪装为 TCP/HTTP 流量  
+* 支持 aes/chacha20/salsa20/none/rc4-md5 加密,启用加密时设置 method 字段和 password 字段,method 字段为空则不启用加密  
 * 支持将流量伪装为 HTTP 流量,默认启用,可用 host 字段设置伪装的 Host,也可以设置 nohttp 字段禁用这项功能  
 
 ## Build 
@@ -49,5 +49,5 @@ tunnel client.json
 * host: 设置 HTTP 伪装的 Host  
 * method: 加密方法,可选 aes-128/192/256-cfb/ctr, chacha20, chacha20-ietf, rc4-md5  
 * password: 加密使用的密码  
-* ignrst: 忽略对端发送的 RST 报文,不推荐使用,仅当你无法过滤 RST 报文时考虑使用  
+* ignrst: 已取消这个选项并且默认启用  
 * expires: 设置每个 session 的过期时间,单位为秒,默认为 30    

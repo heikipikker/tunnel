@@ -19,7 +19,6 @@ type config struct {
 	Remoteaddr string `json:"remoteaddr"`
 	NoHTTP     bool   `json:"nohttp"`
 	Host       string `json:"host"`
-	IgnRST     bool   `json:"ignrst"`
 	Expires    int    `json:"expires"`
 	Method     string `json:"method"`
 	Password   string `json:"password"`

@@ -3,15 +3,16 @@ package main
 import (
 	"log"
 	"net"
+
 	"github.com/ccsexyz/rawcon"
 )
 
 func RunRemoteServer(c *config) {
 	raw := rawcon.Raw{
 		NoHTTP: c.NoHTTP,
-		Host:  c.Host,
-		DSCP: 0,
-		IgnRST: c.IgnRST,
+		Host:   c.Host,
+		DSCP:   0,
+		IgnRST: true,
 	}
 	conn, err := raw.ListenRAW(c.Localaddr)
 	if err != nil {
