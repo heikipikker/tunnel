@@ -1,0 +1,25 @@
+[
+    {
+        "type": "client",
+        "localaddr": ":6363",
+        "remoteaddr": "127.0.0.1:6364",
+        "host": "wwww.zhihu.com",
+        "expires": 40,
+        "datashard": 1,
+        "parityshard": 2,
+        "password": "123",
+        "password": "aes-256-cfb",
+        "mtu": 1200
+    },
+    {
+        "type": "server",
+        "remoteaddr": "8.8.8.8:53",
+        "localaddr": "127.0.0.1:6364",
+        "expires": 40,
+        "datashard": 1,
+        "parityshard": 2,
+        "password": "123",
+        "password": "aes-256-cfb",
+        "mtu": 1200
+    }
+]

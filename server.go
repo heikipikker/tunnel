@@ -18,15 +18,21 @@ func RunRemoteServer(c *config) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	handle := func(sess *udpSession, b []byte) {
-		sess.conn.Write(b)
-	}
-	create := func(b []byte, from net.Addr) (rconn net.Conn, clean func(), err error) {
-		rconn, err = net.Dial("udp", c.Remoteaddr)
-		if err == nil {
-			rconn.Write(b)
+	create := func(sconn *SubConn) (conn net.Conn, rconn net.Conn, err error) {
+		conn = &Conn{
+			Conn:   sconn,
+			config: c,
 		}
+		if c.DataShard != 0 && c.ParityShard != 0 {
+			conn = &FecConn{
+				Conn:       conn,
+				config:     c,
+				fecEncoder: newFECEncoder(c.DataShard, c.ParityShard, 0),
+				fecDecoder: newFECDecoder(3*(c.DataShard+c.ParityShard), c.DataShard, c.ParityShard),
+			}
+		}
+		rconn, err = net.Dial("udp", c.Remoteaddr)
 		return
 	}
-	RunUDPServer(conn, nil, handle, create, c)
+	RunUDPServer(conn, create, c)
 }

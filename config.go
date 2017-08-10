@@ -14,15 +14,18 @@ const (
 )
 
 type config struct {
-	Type       string `json:"type"`
-	Localaddr  string `json:"localaddr"`
-	Remoteaddr string `json:"remoteaddr"`
-	NoHTTP     bool   `json:"nohttp"`
-	Host       string `json:"host"`
-	Expires    int    `json:"expires"`
-	Method     string `json:"method"`
-	Password   string `json:"password"`
-	Ivlen      int
+	Type        string `json:"type"`
+	Localaddr   string `json:"localaddr"`
+	Remoteaddr  string `json:"remoteaddr"`
+	NoHTTP      bool   `json:"nohttp"`
+	Host        string `json:"host"`
+	Expires     int    `json:"expires"`
+	DataShard   int    `json:"datashard"`
+	ParityShard int    `json:"parityshard"`
+	Method      string `json:"method"`
+	Password    string `json:"password"`
+	Mtu         int    `json:"mtu"`
+	Ivlen       int
 }
 
 func readConfig(path string) (configs []*config, err error) {

@@ -18,27 +18,25 @@ func RunLocalServer(c *config) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	handle := func(sess *udpSession, b []byte) {
-		if len(c.Method) == 0 {
-			sess.conn.Write(b)
+	create := func(sconn *SubConn) (conn net.Conn, rconn net.Conn, err error) {
+		conn = sconn
+		rconn, err = raw.DialRAW(c.Remoteaddr)
+		if err != nil {
 			return
 		}
-		buf := make([]byte, 2048)
-		n := encrypt(c, b, buf)
-		sess.conn.Write(buf[:n])
-	}
-	create := func(b []byte, from net.Addr) (rconn net.Conn, clean func(), err error) {
-		rconn, err = raw.DialRAW(c.Remoteaddr)
-		if err == nil {
-			if len(c.Method) == 0 {
-				rconn.Write(b)
-			} else {
-				buf := make([]byte, 2048)
-				n := encrypt(c, b, buf)
-				rconn.Write(buf[:n])
+		rconn = &Conn{
+			Conn:   rconn,
+			config: c,
+		}
+		if c.DataShard != 0 && c.ParityShard != 0 {
+			rconn = &FecConn{
+				Conn:       rconn,
+				config:     c,
+				fecEncoder: newFECEncoder(c.DataShard, c.ParityShard, 0),
+				fecDecoder: newFECDecoder(3*(c.DataShard+c.ParityShard), c.DataShard, c.ParityShard),
 			}
 		}
 		return
 	}
-	RunUDPServer(conn, nil, handle, create, c)
+	RunUDPServer(conn, create, c)
 }

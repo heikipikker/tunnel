@@ -7,6 +7,7 @@
 * 将 UDP 流量通过隧道的形式伪装为 TCP/HTTP 流量  
 * 支持 aes/chacha20/salsa20/none/rc4-md5 加密,启用加密时设置 method 字段和 password 字段,method 字段为空则不启用加密  
 * 支持将流量伪装为 HTTP 流量,默认启用,可用 host 字段设置伪装的 Host,也可以设置 nohttp 字段禁用这项功能  
+* 支持前向纠错(代码实现参考 kcptun)  
 
 ## Build 
 ```
@@ -23,8 +24,7 @@ go get -u -v github.com/ccsexyz/tunnel
     "localaddr": "vps-ip:7676",
     "remoteaddr": ":6666",
     "method": "aes-128-cfb",
-    "password": "123",
-    "ignrst": true
+    "password": "123"
 }
 tunnel server.json
 // 客户端
@@ -34,11 +34,11 @@ tunnel server.json
     "localaddr": "127.0.0.1:7676",
     "remoteaddr": "vps-ip:7676",
     "method": "aes-128-cfb",
-    "password": "123",
-    "ignrst": true
+    "password": "123"
 }
 tunnel client.json  
 ```
+可参考 sample-config.json  
 具体注意事项参考[kcpraw](https://github.com/ccsexyz/kcpraw)
 
 ## Parameters  
@@ -51,3 +51,5 @@ tunnel client.json
 * password: 加密使用的密码  
 * ignrst: 已取消这个选项并且默认启用  
 * expires: 设置每个 session 的过期时间,单位为秒,默认为 30    
+* datashard & parityshard: 与 kcptun 中的对应参数的意义相同，同时设置为0时不启用前向纠错功能    
+* mtu: 设置转发的 udp 报文的最大长度  
