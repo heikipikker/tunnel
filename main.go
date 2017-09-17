@@ -5,9 +5,12 @@ import (
 	"log"
 	"os"
 	"sync"
+
+	"github.com/ccsexyz/utils"
 )
 
 func main() {
+	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime | log.Lmicroseconds)
 	if len(os.Args) != 2 {
 		fmt.Println("usage: tunnel configfile")
 		return
@@ -20,6 +23,9 @@ func main() {
 	for _, c := range configs {
 		wg.Add(1)
 		go func(c *config) {
+			if c.Pprof != "" {
+				utils.RunProfileHTTPServer(c.Pprof)
+			}
 			defer wg.Done()
 			switch c.Type {
 			case "server":

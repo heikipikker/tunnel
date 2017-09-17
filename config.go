@@ -25,6 +25,8 @@ type config struct {
 	Method      string `json:"method"`
 	Password    string `json:"password"`
 	Mtu         int    `json:"mtu"`
+	UDP         bool   `json:"udp"`
+	Pprof       string `json:"pprof"`
 	Ivlen       int
 }
 
@@ -60,5 +62,8 @@ func checkConfig(c *config) {
 	}
 	if len(c.Remoteaddr) == 0 {
 		log.Fatal("no remoteaddr")
+	}
+	if c.Mtu <= 0 {
+		c.Mtu = 1420
 	}
 }

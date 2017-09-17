@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
-	"sync"
 
 	"github.com/ccsexyz/utils"
 )
@@ -36,6 +35,9 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 }
 
 func (c *Conn) Write(b []byte) (n int, err error) {
+	defer func() {
+		// log.Println(n, err)
+	}()
 	n2 := len(b) + c.Ivlen
 	if n2 > c.Mtu {
 		err = fmt.Errorf("buffer is too large")
@@ -55,6 +57,7 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 	return
 }
 
+// FecConn implements FEC decoder and encoder
 type FecConn struct {
 	net.Conn
 	*config
@@ -113,45 +116,4 @@ func (c *FecConn) Write(b []byte) (n int, err error) {
 	}
 
 	return
-}
-
-type SubConn struct {
-	die    chan bool
-	sdie   chan bool
-	lock   sync.Mutex
-	readch chan []byte
-	addr   net.Addr
-	net.PacketConn
-}
-
-func (c *SubConn) Close() error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	select {
-	case <-c.sdie:
-	default:
-		close(c.sdie)
-	}
-	return nil
-}
-
-func (c *SubConn) Read(b []byte) (n int, err error) {
-	var buf []byte
-	select {
-	case <-c.die:
-	case <-c.sdie:
-		err = fmt.Errorf("read from closed conn")
-		return
-	case buf = <-c.readch:
-	}
-	n = copy(b, buf)
-	return
-}
-
-func (c *SubConn) Write(b []byte) (n int, err error) {
-	return c.WriteTo(b, c.addr)
-}
-
-func (c *SubConn) RemoteAddr() net.Addr {
-	return c.addr
 }

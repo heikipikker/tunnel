@@ -5,8 +5,10 @@ import (
 	"net"
 
 	"github.com/ccsexyz/rawcon"
+	"github.com/ccsexyz/utils"
 )
 
+// RunLocalServer run the local client server
 func RunLocalServer(c *config) {
 	raw := rawcon.Raw{
 		NoHTTP: c.NoHTTP,
@@ -14,14 +16,19 @@ func RunLocalServer(c *config) {
 		DSCP:   0,
 		IgnRST: true,
 	}
-	conn, err := newUDPListener(c.Localaddr)
+	conn, err := utils.NewUDPListener(c.Localaddr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	create := func(sconn *SubConn) (conn net.Conn, rconn net.Conn, err error) {
+	create := func(sconn *utils.SubConn) (conn net.Conn, rconn net.Conn, err error) {
 		conn = sconn
-		rconn, err = raw.DialRAW(c.Remoteaddr)
+		if c.UDP {
+			rconn, err = net.Dial("udp", c.Remoteaddr)
+		} else {
+			rconn, err = raw.DialRAW(c.Remoteaddr)
+		}
 		if err != nil {
+			log.Println(err)
 			return
 		}
 		rconn = &Conn{
@@ -38,5 +45,6 @@ func RunLocalServer(c *config) {
 		}
 		return
 	}
-	RunUDPServer(conn, create, c)
+	ctx := &utils.UDPServerCtx{Expires: c.Expires, Mtu: c.Mtu}
+	ctx.RunUDPServer(conn, create)
 }

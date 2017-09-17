@@ -5,20 +5,28 @@ import (
 	"net"
 
 	"github.com/ccsexyz/rawcon"
+	"github.com/ccsexyz/utils"
 )
 
+// RunRemoteServer run the remote server
 func RunRemoteServer(c *config) {
 	raw := rawcon.Raw{
-		NoHTTP: c.NoHTTP,
 		Host:   c.Host,
 		DSCP:   0,
 		IgnRST: true,
+		Mixed:  true,
 	}
-	conn, err := raw.ListenRAW(c.Localaddr)
+	var conn net.PacketConn
+	var err error
+	if c.UDP {
+		conn, err = utils.NewUDPListener(c.Localaddr)
+	} else {
+		conn, err = raw.ListenRAW(c.Localaddr)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
-	create := func(sconn *SubConn) (conn net.Conn, rconn net.Conn, err error) {
+	create := func(sconn *utils.SubConn) (conn net.Conn, rconn net.Conn, err error) {
 		conn = &Conn{
 			Conn:   sconn,
 			config: c,
@@ -34,5 +42,6 @@ func RunRemoteServer(c *config) {
 		rconn, err = net.Dial("udp", c.Remoteaddr)
 		return
 	}
-	RunUDPServer(conn, create, c)
+	ctx := &utils.UDPServerCtx{Expires: c.Expires, Mtu: c.Mtu}
+	ctx.RunUDPServer(conn, create)
 }
