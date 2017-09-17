@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"reflect"
 
 	"github.com/ccsexyz/utils"
 )
@@ -26,8 +27,20 @@ type config struct {
 	Password    string `json:"password"`
 	Mtu         int    `json:"mtu"`
 	UDP         bool   `json:"udp"`
-	Pprof       string `json:"pprof"`
 	Ivlen       int
+}
+
+func (c *config) valid() bool {
+	if len(c.Localaddr) == 0 {
+		return false
+	}
+	if len(c.Remoteaddr) == 0 && c.Type != "server" {
+		return false
+	}
+	if c.DataShard < 0 || c.ParityShard < 0 || c.Mtu < 0 || c.Expires < 0 {
+		return false
+	}
+	return true
 }
 
 func readConfig(path string) (configs []*config, err error) {
@@ -66,4 +79,17 @@ func checkConfig(c *config) {
 	if c.Mtu <= 0 {
 		c.Mtu = 1420
 	}
+}
+
+func (c *config) print() {
+	val := reflect.ValueOf(c)
+	typ := reflect.Indirect(val).Type()
+	nfield := typ.NumField()
+	for i := 0; i < nfield; i++ {
+		jv := typ.Field(i).Tag.Get("json")
+		if len(jv) != 0 {
+			log.Println(jv+":", val.Elem().Field(i))
+		}
+	}
+	log.Println("")
 }
