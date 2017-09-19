@@ -4,6 +4,8 @@ import (
 	"log"
 	"net"
 
+	"github.com/ccsexyz/kcp-go-raw"
+
 	"github.com/ccsexyz/rawcon"
 	"github.com/ccsexyz/utils"
 )
@@ -15,6 +17,7 @@ func RunLocalServer(c *config) {
 		Host:   c.Host,
 		DSCP:   0,
 		IgnRST: true,
+		Dummy:  c.Dummy,
 	}
 	conn, err := utils.NewUDPListener(c.Localaddr)
 	if err != nil {
@@ -22,11 +25,7 @@ func RunLocalServer(c *config) {
 	}
 	create := func(sconn *utils.SubConn) (conn net.Conn, rconn net.Conn, err error) {
 		conn = sconn
-		if c.UDP {
-			rconn, err = net.Dial("udp", c.Remoteaddr)
-		} else {
-			rconn, err = raw.DialRAW(c.Remoteaddr)
-		}
+		rconn, err = kcpraw.DialRAW(c.Remoteaddr, c.Password, c.MulConn, c.UDP, &raw)
 		if err != nil {
 			log.Println(err)
 			return

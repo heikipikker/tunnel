@@ -4,6 +4,8 @@ import (
 	"log"
 	"net"
 
+	"github.com/ccsexyz/kcp-go-raw"
+
 	"github.com/ccsexyz/rawcon"
 	"github.com/ccsexyz/utils"
 )
@@ -15,14 +17,9 @@ func RunRemoteServer(c *config) {
 		DSCP:   0,
 		IgnRST: true,
 		Mixed:  true,
+		Dummy:  c.Dummy,
 	}
-	var conn net.PacketConn
-	var err error
-	if c.UDP {
-		conn, err = utils.NewUDPListener(c.Localaddr)
-	} else {
-		conn, err = raw.ListenRAW(c.Localaddr)
-	}
+	conn, err := kcpraw.ListenRAW(c.Localaddr, c.Password, c.UseMul, c.UDP, &raw)
 	if err != nil {
 		log.Fatal(err)
 	}

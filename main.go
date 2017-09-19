@@ -30,6 +30,9 @@ func main() {
 	flag.IntVar(&cmdconfig.Mtu, "mtu", 1300, "set maximum transmission unit")
 	flag.StringVar(&pprof, "pprof", "", "set the listen address of pprof http server")
 	flag.StringVar(&configfile, "c", "", "set the path of configfile")
+	flag.BoolVar(&cmdconfig.Dummy, "dummy", false, "enable dummy socket")
+	flag.BoolVar(&cmdconfig.UseMul, "usemul", false, "use multi-conn mode")
+	flag.IntVar(&cmdconfig.MulConn, "mulconn", 0, "set the number of mulconn")
 	flag.Parse()
 
 	if len(os.Args) == 2 {
